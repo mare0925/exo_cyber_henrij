@@ -12,5 +12,7 @@
     <p><b>Prénom : </b><?php echo isset($_POST['firstname']) && !empty($_POST['firstname']) ? $_POST['firstname'] : ''; ?></p>
     <p><b>Nom : </b><?php echo isset($_POST['lastname']) && !empty($_POST['lastname']) ? $_POST['lastname'] : ''; ?></p>
     <p><b>Login : </b><?php echo isset($_POST['login']) && !empty($_POST['login']) ? $_POST['login'] : ''; ?></p>
+
+    <p><a href="index.php">Recommencer</a></p>
 </body>
 </html>
