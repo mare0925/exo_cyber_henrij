@@ -2,6 +2,52 @@
 $special_chars = ".-_";
 $allowed_chars = "abcdefghijklmnopqrstuvwxyz0123456789" . $special_chars;
 
+$generate_login = function (string $firstname, string $lastname) use ($special_chars, $allowed_chars) {
+    $login = mb_strtolower(
+        mb_substr($firstname, 0, 10)
+        . "."
+        . mb_substr($lastname, 0, 10)
+    );
+
+    $login = iconv('UTF-8', 'ASCII//TRANSLIT', $login);
+
+    for ($i = 0; $i < mb_strlen($login); $i++) {
+        if (!str_contains($allowed_chars, $login[$i])) $login[$i] = '_';
+    }
+
+    $firstValidChar = 0;
+    $lastValidChar = 100; // Plus que les 21 caractères max. pouvant être reçus à ce stade
+    for ($i = 0; $i < mb_strlen($login); $i++) {
+        if (str_contains($special_chars, $login[$i])) {
+            if ($i == $firstValidChar) $firstValidChar = $i + 1;
+        }
+        else $lastValidChar = $i;
+    }
+    $login = mb_substr($login, $firstValidChar, $lastValidChar - $firstValidChar + 1);
+
+    $login = str_replace("--", "$", $login);
+
+    $lastSpecialCharPos = -1;
+    for ($i = 0; $i < mb_strlen($login); $i++) {
+        if (str_contains($special_chars . "$", $login[$i])) {
+            if ($lastSpecialCharPos == $i - 1) {
+                // On ne garde que :
+                $login =
+                    // les caractères de l'index 0 à actuel exclu (0 à $i)
+                    mb_substr($login, 0, $i)
+                    // + ceux au delà de l'actuel ($i+1)
+                    . mb_substr($login, $i + 1);
+                $i--; // On revient d'un cran en arrière puis la chaîne a été raccourcie
+            }
+            $lastSpecialCharPos = $i;
+        }
+    }
+
+    $login = str_replace("$", "--", $login);
+
+    return $login;
+};
+
 $verify_login = function (string $login) use ($special_chars, $allowed_chars) {
     $is_valid = true;
 
@@ -49,47 +95,7 @@ if (isset($_POST["login"]) && !empty($_POST["login"])) {
     isset($_POST['firstname']) && !empty($_POST['firstname'])
     && isset($_POST['lastname']) && !empty($_POST['lastname'])
 ) {
-    $login = mb_strtolower(
-        mb_substr($_POST['firstname'], 0, 10)
-        . "."
-        . mb_substr($_POST['lastname'], 0, 10)
-    );
-
-    $login = iconv('UTF-8', 'ASCII//TRANSLIT', $login);
-
-    for ($i = 0; $i < mb_strlen($login); $i++) {
-        if (!str_contains($allowed_chars, $login[$i])) $login[$i] = '_';
-    }
-
-    $firstValidChar = 0;
-    $lastValidChar = 100; // Plus que les 21 caractères max. pouvant être reçus à ce stade
-    for ($i = 0; $i < mb_strlen($login); $i++) {
-        if (str_contains($special_chars, $login[$i])) {
-            if ($i == $firstValidChar) $firstValidChar = $i + 1;
-        }
-        else $lastValidChar = $i;
-    }
-    $login = mb_substr($login, $firstValidChar, $lastValidChar - $firstValidChar + 1);
-
-    $login = str_replace("--", "$", $login);
-
-    $lastSpecialCharPos = -1;
-    for ($i = 0; $i < mb_strlen($login); $i++) {
-        if (str_contains($special_chars . "$", $login[$i])) {
-            if ($lastSpecialCharPos == $i - 1) {
-                // On ne garde que :
-                $login =
-                    // les caractères de l'index 0 à actuel exclu (0 à $i)
-                    mb_substr($login, 0, $i)
-                    // + ceux au delà de l'actuel ($i+1)
-                    . mb_substr($login, $i + 1);
-                $i--; // On revient d'un cran en arrière puis la chaîne a été raccourcie
-            }
-            $lastSpecialCharPos = $i;
-        }
-    }
-
-    $login = str_replace("$", "--", $login);
+    $login = $generate_login($_POST["firstname"], $_POST["lastname"]);
 
     $_POST["login"] = $login;
 
